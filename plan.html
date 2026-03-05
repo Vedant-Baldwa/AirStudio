@@ -1,0 +1,2479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirStudio — Technical Implementation Plan</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0A0C10;
+            --surface: #111318;
+            --card: #161A22;
+            --card2: #1C2028;
+            --accent: #00E5FF;
+            --accent2: #FF6B35;
+            --accent3: #A78BFA;
+            --green: #22D3A0;
+            --yellow: #FACC15;
+            --text: #E8EAF0;
+            --muted: #6B7280;
+            --border: rgba(255, 255, 255, 0.07);
+            --code-bg: #0D1117;
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2A2E38;
+            border-radius: 3px;
+        }
+
+        /* LAYOUT */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            padding: 32px 0;
+        }
+
+        .sidebar-logo {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: 1px;
+            color: var(--accent);
+            padding: 0 28px 28px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-logo span {
+            color: var(--text);
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 8px 28px 6px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 28px;
+            font-size: 13px;
+            color: #9CA3AF;
+            text-decoration: none;
+            transition: all 0.15s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-link.active {
+            color: var(--accent);
+            border-left-color: var(--accent);
+            background: rgba(0, 229, 255, 0.05);
+        }
+
+        .nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+            opacity: 0.6;
+        }
+
+        /* MAIN CONTENT */
+        .main {
+            margin-left: 280px;
+            flex: 1;
+            max-width: 900px;
+            padding: 60px 64px;
+        }
+
+        /* SECTIONS */
+        section {
+            margin-bottom: 80px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .section-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            opacity: 0.6;
+            min-width: 32px;
+        }
+
+        .section-header h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* HERO BANNER */
+        .doc-hero {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px 44px;
+            margin-bottom: 64px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doc-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at top left, rgba(0, 229, 255, 0.08), transparent 60%),
+                radial-gradient(ellipse at bottom right, rgba(167, 139, 250, 0.06), transparent 60%);
+            pointer-events: none;
+        }
+
+        .doc-hero-tag {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .doc-hero-tag::before {
+            content: '';
+            width: 20px;
+            height: 1.5px;
+            background: var(--accent);
+        }
+
+        .doc-hero h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 36px;
+            line-height: 1.15;
+            margin-bottom: 16px;
+        }
+
+        .doc-hero h1 span {
+            color: var(--accent);
+        }
+
+        .doc-hero p {
+            color: #9CA3AF;
+            max-width: 580px;
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .doc-hero-meta {
+            display: flex;
+            gap: 32px;
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .meta-item strong {
+            color: var(--text);
+            display: block;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        /* PROSE */
+        p {
+            color: #C4C9D4;
+            margin-bottom: 16px;
+        }
+
+        h3 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 28px 0 12px;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            margin: 24px 0 10px;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 16px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .card-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .card-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .lbl-cv {
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--accent);
+        }
+
+        .lbl-audio {
+            background: rgba(255, 107, 53, 0.12);
+            color: var(--accent2);
+        }
+
+        .lbl-app {
+            background: rgba(167, 139, 250, 0.12);
+            color: var(--accent3);
+        }
+
+        .lbl-ml {
+            background: rgba(34, 211, 160, 0.12);
+            color: var(--green);
+        }
+
+        .lbl-phase1 {
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--accent);
+        }
+
+        .lbl-phase2 {
+            background: rgba(167, 139, 250, 0.12);
+            color: var(--accent3);
+        }
+
+        .lbl-phase3 {
+            background: rgba(255, 107, 53, 0.12);
+            color: var(--accent2);
+        }
+
+        /* CODE BLOCKS */
+        pre {
+            background: var(--code-bg);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 20px 24px;
+            overflow-x: auto;
+            margin: 16px 0 24px;
+            position: relative;
+        }
+
+        pre code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #E2E8F0;
+        }
+
+        .code-label {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .kw {
+            color: #C678DD;
+        }
+
+        .fn {
+            color: #61AFEF;
+        }
+
+        .str {
+            color: #98C379;
+        }
+
+        .cm {
+            color: #5C6370;
+            font-style: italic;
+        }
+
+        .num {
+            color: #D19A66;
+        }
+
+        .cls {
+            color: #E5C07B;
+        }
+
+        .prop {
+            color: #ABB2BF;
+        }
+
+        /* PROMPT BLOCKS */
+        .prompt-block {
+            background: #0D0F14;
+            border: 1px solid rgba(167, 139, 250, 0.25);
+            border-left: 3px solid var(--accent3);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin: 16px 0 24px;
+            position: relative;
+        }
+
+        .prompt-tag {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent3);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .prompt-tag::before {
+            content: '🤖';
+            font-size: 12px;
+        }
+
+        .prompt-block p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            line-height: 1.8;
+            color: #C8CFD8;
+            margin-bottom: 0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            background: rgba(167, 139, 250, 0.15);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            color: var(--accent3);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(167, 139, 250, 0.25);
+        }
+
+        /* LISTS */
+        ul,
+        ol {
+            padding-left: 0;
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        ul li,
+        ol li {
+            padding: 5px 0 5px 22px;
+            font-size: 14px;
+            color: #B0B8C4;
+            position: relative;
+        }
+
+        ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-size: 12px;
+            top: 7px;
+        }
+
+        ol {
+            counter-reset: list-counter;
+        }
+
+        ol li {
+            counter-increment: list-counter;
+        }
+
+        ol li::before {
+            content: counter(list-counter, decimal-leading-zero);
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            top: 7px;
+        }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 28px;
+            font-size: 13.5px;
+        }
+
+        thead th {
+            background: var(--card2);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: #C4C9D4;
+            vertical-align: top;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* CALLOUTS */
+        .callout {
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 16px 0 24px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .callout-info {
+            background: rgba(0, 229, 255, 0.07);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+
+        .callout-warn {
+            background: rgba(250, 204, 21, 0.07);
+            border: 1px solid rgba(250, 204, 21, 0.2);
+        }
+
+        .callout-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .callout p {
+            color: #B0B8C4;
+            margin-bottom: 0;
+            font-size: 13.5px;
+        }
+
+        /* ARCH DIAGRAM */
+        .arch-diagram {
+            background: var(--code-bg);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 2;
+            color: #9CA3AF;
+            overflow-x: auto;
+            margin: 16px 0 24px;
+        }
+
+        .arch-diagram .box {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .arch-diagram .arrow {
+            color: var(--accent2);
+        }
+
+        .arch-diagram .label {
+            color: var(--accent3);
+        }
+
+        /* PHASE TIMELINE */
+        .timeline {
+            position: relative;
+            margin: 0 0 32px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 0;
+            position: relative;
+        }
+
+        .timeline-item+.timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: -20px;
+            width: 2px;
+            height: 20px;
+            background: var(--border);
+        }
+
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+
+        .dot-1 {
+            background: rgba(0, 229, 255, 0.15);
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+        }
+
+        .dot-2 {
+            background: rgba(167, 139, 250, 0.15);
+            color: var(--accent3);
+            border: 1.5px solid var(--accent3);
+        }
+
+        .dot-3 {
+            background: rgba(255, 107, 53, 0.15);
+            color: var(--accent2);
+            border: 1.5px solid var(--accent2);
+        }
+
+        .timeline-content {
+            padding-bottom: 36px;
+            flex: 1;
+        }
+
+        .timeline-content h3 {
+            margin-top: 4px;
+            margin-bottom: 10px;
+            font-size: 17px;
+        }
+
+        .timeline-meta {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* BADGE */
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin: 2px 4px 2px 0;
+        }
+
+        .badge-blue {
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--accent);
+        }
+
+        .badge-purple {
+            background: rgba(167, 139, 250, 0.12);
+            color: var(--accent3);
+        }
+
+        .badge-orange {
+            background: rgba(255, 107, 53, 0.12);
+            color: var(--accent2);
+        }
+
+        .badge-green {
+            background: rgba(34, 211, 160, 0.12);
+            color: var(--green);
+        }
+
+        /* DIVIDER */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 36px 0;
+        }
+
+        /* GESTURE VISUAL */
+        .gesture-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0 24px;
+        }
+
+        .gesture-card {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px 16px;
+            text-align: center;
+        }
+
+        .gesture-card .emoji {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .gesture-card .name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .gesture-card .desc {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* SPRINT TABLE */
+        .sprint-row td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* TOC */
+        .toc {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 32px;
+            margin-bottom: 48px;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 16px;
+            color: var(--muted);
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .toc-list {
+            columns: 2;
+            gap: 16px;
+            list-style: none;
+        }
+
+        .toc-list li {
+            padding: 4px 0;
+            break-inside: avoid;
+        }
+
+        .toc-list li a {
+            font-size: 13px;
+            color: #9CA3AF;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.15s;
+        }
+
+        .toc-list li a:hover {
+            color: var(--accent);
+        }
+
+        .toc-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            min-width: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">Air<span>Studio</span></div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Overview</div>
+            <a href="#overview" class="nav-link active">
+                <div class="nav-dot"></div>Project Overview
+            </a>
+            <a href="#architecture" class="nav-link">
+                <div class="nav-dot"></div>System Architecture
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Technical Stack</div>
+            <a href="#cv-pipeline" class="nav-link">
+                <div class="nav-dot"></div>CV Pipeline
+            </a>
+            <a href="#gesture-engine" class="nav-link">
+                <div class="nav-dot"></div>Gesture Engine
+            </a>
+            <a href="#audio-engine" class="nav-link">
+                <div class="nav-dot"></div>Audio Engine
+            </a>
+            <a href="#instruments" class="nav-link">
+                <div class="nav-dot"></div>Instruments
+            </a>
+            <a href="#ar-overlay" class="nav-link">
+                <div class="nav-dot"></div>AR Overlay
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Implementation</div>
+            <a href="#project-structure" class="nav-link">
+                <div class="nav-dot"></div>Project Structure
+            </a>
+            <a href="#implementation-plan" class="nav-link">
+                <div class="nav-dot"></div>Implementation Plan
+            </a>
+            <a href="#sprint-plan" class="nav-link">
+                <div class="nav-dot"></div>Sprint Breakdown
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Claude Prompts</div>
+            <a href="#prompts-setup" class="nav-link">
+                <div class="nav-dot"></div>Setup Prompts
+            </a>
+            <a href="#prompts-cv" class="nav-link">
+                <div class="nav-dot"></div>CV Prompts
+            </a>
+            <a href="#prompts-audio" class="nav-link">
+                <div class="nav-dot"></div>Audio Prompts
+            </a>
+            <a href="#prompts-instruments" class="nav-link">
+                <div class="nav-dot"></div>Instrument Prompts
+            </a>
+            <a href="#prompts-advanced" class="nav-link">
+                <div class="nav-dot"></div>Advanced Features
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- HERO -->
+        <div class="doc-hero">
+            <div class="doc-hero-tag">Technical Implementation Document</div>
+            <h1>AirStudio <span>Technical Plan</span><br />& Claude Build Prompts</h1>
+            <p>Complete architecture, implementation roadmap, code patterns, and ready-to-use Claude prompts to build
+                the full AirStudio system from scratch.</p>
+            <div class="doc-hero-meta">
+                <div class="meta-item"><strong>Stack</strong>React + MediaPipe + Tone.js</div>
+                <div class="meta-item"><strong>Timeline</strong>12 Weeks (3 Phases)</div>
+                <div class="meta-item"><strong>Instruments</strong>Guitar, Drums, Piano, Violin</div>
+                <div class="meta-item"><strong>Target Latency</strong>&lt; 50ms</div>
+            </div>
+        </div>
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc">
+            <h3>Contents</h3>
+            <ul class="toc-list">
+                <li><a href="#overview"><span class="toc-num">01</span>Project Overview</a></li>
+                <li><a href="#architecture"><span class="toc-num">02</span>System Architecture</a></li>
+                <li><a href="#cv-pipeline"><span class="toc-num">03</span>CV Pipeline</a></li>
+                <li><a href="#gesture-engine"><span class="toc-num">04</span>Gesture Engine</a></li>
+                <li><a href="#audio-engine"><span class="toc-num">05</span>Audio Engine</a></li>
+                <li><a href="#instruments"><span class="toc-num">06</span>Instrument Modules</a></li>
+                <li><a href="#ar-overlay"><span class="toc-num">07</span>AR Overlay</a></li>
+                <li><a href="#project-structure"><span class="toc-num">08</span>Project Structure</a></li>
+                <li><a href="#implementation-plan"><span class="toc-num">09</span>Implementation Plan</a></li>
+                <li><a href="#sprint-plan"><span class="toc-num">10</span>Sprint Breakdown</a></li>
+                <li><a href="#prompts-setup"><span class="toc-num">11</span>Claude Prompts: Setup</a></li>
+                <li><a href="#prompts-cv"><span class="toc-num">12</span>Claude Prompts: CV</a></li>
+                <li><a href="#prompts-audio"><span class="toc-num">13</span>Claude Prompts: Audio</a></li>
+                <li><a href="#prompts-instruments"><span class="toc-num">14</span>Claude Prompts: Instruments</a></li>
+                <li><a href="#prompts-advanced"><span class="toc-num">15</span>Claude Prompts: Advanced</a></li>
+            </ul>
+        </div>
+
+        <!-- ============================
+       SECTION 1: OVERVIEW
+  ============================= -->
+        <section id="overview">
+            <div class="section-header">
+                <span class="section-num">01</span>
+                <h2>Project Overview</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <p>AirStudio is a browser-based, hardware-free music performance platform. Using a standard webcam and
+                computer vision, it tracks a user's hand gestures in real-time and maps those gestures to musical notes,
+                rhythms, and instrument sounds across multiple virtual instruments.</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-label lbl-cv">Computer Vision</div>
+                    <h3>Hand Tracking</h3>
+                    <p>MediaPipe Hands detects 21 3D landmarks per hand at 30fps, running entirely in-browser via
+                        WebAssembly. No backend needed for CV processing.</p>
+                </div>
+                <div class="card">
+                    <div class="card-label lbl-audio">Audio</div>
+                    <h3>Sound Synthesis</h3>
+                    <p>Tone.js + Web Audio API for low-latency instrument synthesis. Sampled soundbanks for realistic
+                        instrument tones with reverb, sustain, and dynamics.</p>
+                </div>
+                <div class="card">
+                    <div class="card-label lbl-ml">ML</div>
+                    <h3>Gesture Classifier</h3>
+                    <p>TensorFlow.js gesture classifier trained on hand landmark angles. Identifies chord shapes,
+                        strumming velocity, finger positions, and instrument-switch gestures.</p>
+                </div>
+                <div class="card">
+                    <div class="card-label lbl-app">Application</div>
+                    <h3>React Frontend</h3>
+                    <p>React + Canvas for AR overlay rendering. Real-time state management for active instrument,
+                        looping, recording, and multiplayer sync.</p>
+                </div>
+            </div>
+
+            <h3>Core Design Principles</h3>
+            <ul>
+                <li><strong>Zero hardware required</strong> — works on any device with a webcam</li>
+                <li><strong>Sub-50ms latency</strong> — gesture to sound must feel instantaneous</li>
+                <li><strong>Progressive complexity</strong> — beginner gestures work immediately; advanced gestures
+                    unlock more expressive play</li>
+                <li><strong>No installation</strong> — runs fully in-browser, no server-side ML inference</li>
+                <li><strong>Instrument fidelity</strong> — each instrument has unique gesture semantics, not just
+                    reskinned controls</li>
+            </ul>
+        </section>
+
+        <!-- ============================
+       SECTION 2: ARCHITECTURE
+  ============================= -->
+        <section id="architecture">
+            <div class="section-header">
+                <span class="section-num">02</span>
+                <h2>System Architecture</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="arch-diagram">
+                <span class="label">┌─────────────────────────────────────────────────────────────────┐</span>
+                <span class="label">│ BROWSER (CLIENT ONLY) │</span>
+                <span class="label">└─────────────────────────────────────────────────────────────────┘</span>
+                <span class="label"> ┌──────────────┐</span>
+                <span class="label"> │ WEBCAM INPUT │ getUserMedia() API</span>
+                <span class="label"> └──────┬───────┘</span>
+                <span class="arrow"> ↓</span>
+                <span class="label">┌────────────────────────────────────┐</span>
+                <span class="box">│ CV LAYER — MediaPipe Hands │</span> <span class="cm">// WebAssembly, 30fps</span>
+                <span class="label">│ 21 hand landmarks (x,y,z) × 2 │</span>
+                <span class="label">└──────────────┬─────────────────────┘</span>
+                <span class="arrow"> ↓</span>
+                <span class="label">┌────────────────────────────────────┐</span>
+                <span class="box">│ GESTURE ENGINE — TF.js + Rules │</span> <span class="cm">// Classify + derive
+                    params</span>
+                <span class="label">│ ├── GestureClassifier (TF.js) │</span>
+                <span class="label">│ ├── VelocityEstimator │</span>
+                <span class="label">│ ├── FingerAngleExtractor │</span>
+                <span class="label">│ └── InstrumentSwitchDetector │</span>
+                <span class="label">└──────────────┬─────────────────────┘</span>
+                <span class="arrow"> ↓</span>
+                <span class="label">┌────────────────────────────────────┐</span>
+                <span class="box">│ INSTRUMENT MODULES (per instr) │</span> <span class="cm">// Gesture → musical
+                    params</span>
+                <span class="label">│ ├── GuitarModule │</span>
+                <span class="label">│ ├── DrumModule │</span>
+                <span class="label">│ ├── PianoModule │</span>
+                <span class="label">│ └── ViolinModule │</span>
+                <span class="label">└──────────────┬─────────────────────┘</span>
+                <span class="arrow"> ↓</span>
+                <span class="label">┌────────────────────────────────────┐</span>
+                <span class="box">│ AUDIO ENGINE — Tone.js │</span> <span class="cm">// Synthesis + scheduling</span>
+                <span class="label">│ ├── SamplerBank (real recordings) │</span>
+                <span class="label">│ ├── EffectsChain (reverb/delay) │</span>
+                <span class="label">│ ├── LoopRecorder │</span>
+                <span class="label">│ └── Scheduler (precise timing) │</span>
+                <span class="label">└──────────────┬─────────────────────┘</span>
+                <span class="arrow"> ↓</span>
+                <span class="label">┌────────────────────────────────────┐</span>
+                <span class="box">│ AR OVERLAY — Canvas + React │</span> <span class="cm">// Visual feedback</span>
+                <span class="label">│ Renders: skeleton, frets, keys, │</span>
+                <span class="label">│ drum pads, note particles │</span>
+                <span class="label">└────────────────────────────────────┘</span>
+            </div>
+
+            <h3>Data Flow per Frame</h3>
+            <ol>
+                <li>Webcam frame captured via <code>requestAnimationFrame</code></li>
+                <li>Frame fed to MediaPipe Hands — returns <code>NormalizedLandmarkList</code></li>
+                <li>Landmark array passed to GestureEngine — returns <code>GestureEvent</code></li>
+                <li>GestureEvent dispatched to active InstrumentModule</li>
+                <li>InstrumentModule returns <code>MusicalEvent</code> (note, velocity, duration)</li>
+                <li>AudioEngine receives MusicalEvent and schedules playback</li>
+                <li>Canvas overlay updated with visual feedback on same frame</li>
+            </ol>
+
+            <div class="callout callout-info">
+                <div class="callout-icon">ℹ️</div>
+                <p><strong>Key constraint:</strong> All processing must complete within one frame (~33ms at 30fps).
+                    MediaPipe WASM typically takes 8–15ms. Gesture classification 2–5ms. Audio scheduling is async.
+                    Total budget is well within 33ms on modern hardware.</p>
+            </div>
+        </section>
+
+        <!-- ============================
+       SECTION 3: CV PIPELINE
+  ============================= -->
+        <section id="cv-pipeline">
+            <div class="section-header">
+                <span class="section-num">03</span>
+                <h2>Computer Vision Pipeline</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <h3>MediaPipe Hands — Landmark Model</h3>
+            <p>Each hand produces 21 landmarks. Each landmark has normalized (x, y) coordinates [0–1] and a relative z
+                depth. We use landmark indices constantly throughout the system.</p>
+
+            <pre><position: relative><code><span class="code-label">LANDMARK MAP</span>
+<span class="cm">// Wrist and finger joint indices</span>
+<span class="kw">const</span> <span class="cls">LANDMARKS</span> = {
+  WRIST:           <span class="num">0</span>,
+  THUMB:           [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>],   <span class="cm">// CMC, MCP, IP, TIP</span>
+  INDEX_FINGER:    [<span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>],   <span class="cm">// MCP, PIP, DIP, TIP</span>
+  MIDDLE_FINGER:   [<span class="num">9</span>, <span class="num">10</span>, <span class="num">11</span>, <span class="num">12</span>],
+  RING_FINGER:     [<span class="num">13</span>, <span class="num">14</span>, <span class="num">15</span>, <span class="num">16</span>],
+  PINKY:           [<span class="num">17</span>, <span class="num">18</span>, <span class="num">19</span>, <span class="num">20</span>],
+};
+<span class="cm">// Tips: indices 4, 8, 12, 16, 20</span>
+<span class="cm">// MCPs (knuckles): indices 5, 9, 13, 17</span></code></pre>
+
+            <h3>Setup Code</h3>
+            <pre><position: relative><code><span class="code-label">setup.js</span>
+<span class="kw">import</span> { Hands, HAND_CONNECTIONS } <span class="kw">from</span> <span class="str">'@mediapipe/hands'</span>;
+<span class="kw">import</span> { Camera } <span class="kw">from</span> <span class="str">'@mediapipe/camera_utils'</span>;
+
+<span class="kw">const</span> <span class="fn">initHandTracking</span> = (<span class="prop">videoEl</span>, <span class="prop">onResults</span>) => {
+  <span class="kw">const</span> hands = <span class="kw">new</span> <span class="cls">Hands</span>({
+    locateFile: (<span class="prop">file</span>) => <span class="str">`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`</span>
+  });
+
+  hands.<span class="fn">setOptions</span>({
+    maxNumHands: <span class="num">2</span>,
+    modelComplexity: <span class="num">1</span>,          <span class="cm">// 0=lite, 1=full</span>
+    minDetectionConfidence: <span class="num">0.7</span>,
+    minTrackingConfidence: <span class="num">0.6</span>,
+    selfieMode: <span class="kw">true</span>,             <span class="cm">// Mirror for natural feel</span>
+  });
+
+  hands.<span class="fn">onResults</span>(onResults);
+
+  <span class="kw">const</span> camera = <span class="kw">new</span> <span class="cls">Camera</span>(videoEl, {
+    <span class="fn">onFrame</span>: <span class="kw">async</span> () => {
+      <span class="kw">await</span> hands.<span class="fn">send</span>({ image: videoEl });
+    },
+    width: <span class="num">1280</span>, height: <span class="num">720</span>
+  });
+  camera.<span class="fn">start</span>();
+  <span class="kw">return</span> { hands, camera };
+};</code></pre>
+
+            <h3>Derived Metrics from Landmarks</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>How to Compute</th>
+                        <th>Used For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Finger extension</td>
+                        <td>Angle at PIP joint (landmarks 6-7-8 for index)</td>
+                        <td>Chord shapes, piano keys</td>
+                    </tr>
+                    <tr>
+                        <td>Strum velocity</td>
+                        <td>Delta-Y of wrist (landmark 0) between frames</td>
+                        <td>Guitar dynamics, drum hit force</td>
+                    </tr>
+                    <tr>
+                        <td>Fist openness</td>
+                        <td>Average distance from fingertips to palm centroid</td>
+                        <td>Mute, note off events</td>
+                    </tr>
+                    <tr>
+                        <td>Hand tilt</td>
+                        <td>Angle of line from wrist to middle MCP</td>
+                        <td>Pitch bend, vibrato</td>
+                    </tr>
+                    <tr>
+                        <td>Pinch distance</td>
+                        <td>Distance between thumb tip (4) and index tip (8)</td>
+                        <td>Volume control, sustain</td>
+                    </tr>
+                    <tr>
+                        <td>Hand side</td>
+                        <td>Landmarks.handedness confidence score</td>
+                        <td>Left = chord, Right = strum</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ============================
+       SECTION 4: GESTURE ENGINE
+  ============================= -->
+        <section id="gesture-engine">
+            <div class="section-header">
+                <span class="section-num">04</span>
+                <h2>Gesture Engine</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <p>The Gesture Engine sits between raw landmarks and instrument-specific logic. It has two layers: a
+                rule-based layer for geometric calculations (always accurate) and a learned classifier for complex
+                gesture shapes (handles ambiguity).</p>
+
+            <div class="gesture-grid">
+                <div class="gesture-card">
+                    <span class="emoji">✊</span>
+                    <div class="name">Fist Closed</div>
+                    <div class="desc">All fingers curled · Triggers mute / note-off</div>
+                </div>
+                <div class="gesture-card">
+                    <span class="emoji">🖐️</span>
+                    <div class="name">Open Palm</div>
+                    <div class="desc">All fingers extended · Chord open / sustain hold</div>
+                </div>
+                <div class="gesture-card">
+                    <span class="emoji">🤘</span>
+                    <div class="name">Rock Sign</div>
+                    <div class="desc">Index + Pinky up · Power chord / instrument switch</div>
+                </div>
+                <div class="gesture-card">
+                    <span class="emoji">👆</span>
+                    <div class="name">Index Point</div>
+                    <div class="desc">Index extended only · Single note select</div>
+                </div>
+                <div class="gesture-card">
+                    <span class="emoji">🤙</span>
+                    <div class="name">Hang Loose</div>
+                    <div class="desc">Thumb + Pinky · Loop toggle</div>
+                </div>
+                <div class="gesture-card">
+                    <span class="emoji">👌</span>
+                    <div class="name">OK Pinch</span>
+                        <div class="desc">Thumb-index pinch · Volume / tempo control</div>
+                    </div>
+                </div>
+
+                <h3>Gesture Classifier (TF.js)</h3>
+
+                <pre><position: relative><code><span class="code-label">gestureClassifier.js</span>
+<span class="kw">import</span> * <span class="kw">as</span> tf <span class="kw">from</span> <span class="str">'@tensorflow/tfjs'</span>;
+
+<span class="cm">// Feature extraction from 21 landmarks → 42 angle features</span>
+<span class="kw">const</span> <span class="fn">extractFeatures</span> = (<span class="prop">landmarks</span>) => {
+  <span class="kw">const</span> angles = [];
+  
+  <span class="cm">// Compute joint angles for each finger</span>
+  <span class="kw">const</span> fingerJoints = [
+    [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>],   <span class="cm">// thumb</span>
+    [<span class="num">5</span>,<span class="num">6</span>,<span class="num">7</span>,<span class="num">8</span>],   <span class="cm">// index</span>
+    [<span class="num">9</span>,<span class="num">10</span>,<span class="num">11</span>,<span class="num">12</span>], <span class="cm">// middle</span>
+    [<span class="num">13</span>,<span class="num">14</span>,<span class="num">15</span>,<span class="num">16</span>], <span class="cm">// ring</span>
+    [<span class="num">17</span>,<span class="num">18</span>,<span class="num">19</span>,<span class="num">20</span>]  <span class="cm">// pinky</span>
+  ];
+  
+  fingerJoints.<span class="fn">forEach</span>(joints => {
+    <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i < joints.length - <span class="num">2</span>; i++) {
+      <span class="kw">const</span> angle = <span class="fn">computeAngle</span>(
+        landmarks[joints[i]], 
+        landmarks[joints[i+<span class="num">1</span>]], 
+        landmarks[joints[i+<span class="num">2</span>]]
+      );
+      angles.<span class="fn">push</span>(angle);
+    }
+  });
+  
+  <span class="kw">return</span> angles; <span class="cm">// 15 angles total (3 per finger)</span>
+};
+
+<span class="kw">const</span> <span class="fn">computeAngle</span> = (a, b, c) => {
+  <span class="kw">const</span> ba = { x: a.x - b.x, y: a.y - b.y };
+  <span class="kw">const</span> bc = { x: c.x - b.x, y: c.y - b.y };
+  <span class="kw">const</span> cosAngle = (ba.x*bc.x + ba.y*bc.y) / 
+    (Math.<span class="fn">sqrt</span>(ba.x**<span class="num">2</span> + ba.y**<span class="num">2</span>) * Math.<span class="fn">sqrt</span>(bc.x**<span class="num">2</span> + bc.y**<span class="num">2</span>));
+  <span class="kw">return</span> Math.<span class="fn">acos</span>(Math.<span class="fn">max</span>(-<span class="num">1</span>, Math.<span class="fn">min</span>(<span class="num">1</span>, cosAngle))) * (<span class="num">180</span> / Math.PI);
+};</code></pre>
+
+                <h3>Velocity & Dynamics</h3>
+                <pre><position: relative><code><span class="code-label">velocityEstimator.js</span>
+<span class="kw">class</span> <span class="cls">VelocityEstimator</span> {
+  <span class="fn">constructor</span>() {
+    <span class="kw">this</span>.history = [];
+    <span class="kw">this</span>.windowSize = <span class="num">5</span>; <span class="cm">// frames</span>
+  }
+  
+  <span class="fn">update</span>(wristY) {
+    <span class="kw">this</span>.history.<span class="fn">push</span>({ y: wristY, t: Date.<span class="fn">now</span>() });
+    <span class="kw">if</span> (<span class="kw">this</span>.history.length > <span class="kw">this</span>.windowSize) <span class="kw">this</span>.history.<span class="fn">shift</span>();
+  }
+  
+  <span class="fn">getVelocity</span>() {
+    <span class="kw">if</span> (<span class="kw">this</span>.history.length < <span class="num">2</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">const</span> first = <span class="kw">this</span>.history[<span class="num">0</span>];
+    <span class="kw">const</span> last = <span class="kw">this</span>.history[<span class="kw">this</span>.history.length - <span class="num">1</span>];
+    <span class="kw">const</span> dy = Math.<span class="fn">abs</span>(last.y - first.y);
+    <span class="kw">const</span> dt = (last.t - first.t) / <span class="num">1000</span>;
+    <span class="kw">return</span> Math.<span class="fn">min</span>(<span class="num">1</span>, dy / dt / <span class="num">2</span>); <span class="cm">// Normalized 0–1</span>
+  }
+  
+  <span class="fn">getMidiVelocity</span>() {
+    <span class="kw">return</span> Math.<span class="fn">round</span>(<span class="kw">this</span>.<span class="fn">getVelocity</span>() * <span class="num">127</span>); <span class="cm">// 0–127 MIDI</span>
+  }
+}</code></pre>
+        </section>
+
+        <!-- ============================
+       SECTION 5: AUDIO ENGINE
+  ============================= -->
+        <section id="audio-engine">
+            <div class="section-header">
+                <span class="section-num">05</span>
+                <h2>Audio Engine</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <p>Built on <strong>Tone.js</strong> which provides a Web Audio abstraction layer with precise timing,
+                synthesis, and effects. Each instrument module has its own sampler instance connected to a shared
+                effects chain.</p>
+
+            <pre><position: relative><code><span class="code-label">audioEngine.js</span>
+<span class="kw">import</span> * <span class="kw">as</span> Tone <span class="kw">from</span> <span class="str">'tone'</span>;
+
+<span class="kw">class</span> <span class="cls">AudioEngine</span> {
+  <span class="kw">async</span> <span class="fn">init</span>() {
+    <span class="kw">await</span> Tone.<span class="fn">start</span>(); <span class="cm">// Must be triggered by user gesture</span>
+    
+    <span class="cm">// Master effects chain</span>
+    <span class="kw">this</span>.reverb = <span class="kw">new</span> Tone.<span class="cls">Reverb</span>({ decay: <span class="num">1.5</span>, wet: <span class="num">0.2</span> });
+    <span class="kw">this</span>.compressor = <span class="kw">new</span> Tone.<span class="cls">Compressor</span>(-<span class="num">20</span>, <span class="num">4</span>);
+    <span class="kw">this</span>.limiter = <span class="kw">new</span> Tone.<span class="cls">Limiter</span>(-<span class="num">6</span>);
+    
+    <span class="cm">// Route: sampler → compressor → reverb → limiter → output</span>
+    Tone.Destination.chain(<span class="kw">this</span>.compressor, <span class="kw">this</span>.reverb, <span class="kw">this</span>.limiter);
+    
+    <span class="cm">// Load all instrument samplers</span>
+    <span class="kw">this</span>.samplers = {
+      guitar: <span class="kw">await</span> <span class="fn">loadGuitarSampler</span>(),
+      drums:  <span class="kw">await</span> <span class="fn">loadDrumSampler</span>(),
+      piano:  <span class="kw">await</span> <span class="fn">loadPianoSampler</span>(),
+      violin: <span class="kw">await</span> <span class="fn">loadViolinSampler</span>(),
+    };
+  }
+
+  <span class="fn">playNote</span>({ instrument, note, velocity = <span class="num">0.8</span>, duration = <span class="str">'8n'</span> }) {
+    <span class="kw">const</span> sampler = <span class="kw">this</span>.samplers[instrument];
+    sampler.<span class="fn">triggerAttackRelease</span>(note, duration, Tone.now(), velocity);
+  }
+
+  <span class="fn">startNote</span>({ instrument, note, velocity }) {
+    <span class="kw">this</span>.samplers[instrument].<span class="fn">triggerAttack</span>(note, Tone.now(), velocity);
+  }
+
+  <span class="fn">stopNote</span>({ instrument, note }) {
+    <span class="kw">this</span>.samplers[instrument].<span class="fn">triggerRelease</span>(note, Tone.now());
+  }
+}
+
+<span class="cm">// Guitar sampler (uses real guitar samples from public domain)</span>
+<span class="kw">const</span> <span class="fn">loadGuitarSampler</span> = () => <span class="kw">new</span> <span class="cls">Promise</span>(resolve => {
+  <span class="kw">const</span> sampler = <span class="kw">new</span> Tone.<span class="cls">Sampler</span>({
+    urls: {
+      <span class="str">'E2'</span>: <span class="str">'guitar-E2.mp3'</span>, <span class="str">'A2'</span>: <span class="str">'guitar-A2.mp3'</span>,
+      <span class="str">'D3'</span>: <span class="str">'guitar-D3.mp3'</span>, <span class="str">'G3'</span>: <span class="str">'guitar-G3.mp3'</span>,
+      <span class="str">'B3'</span>: <span class="str">'guitar-B3.mp3'</span>, <span class="str">'E4'</span>: <span class="str">'guitar-E4.mp3'</span>,
+    },
+    baseUrl: <span class="str">'/samples/guitar/'</span>,
+    <span class="fn">onload</span>: () => resolve(sampler.<span class="fn">toDestination</span>()),
+  });
+});</code></pre>
+
+            <h3>Loop Recorder</h3>
+            <pre><position: relative><code><span class="code-label">loopRecorder.js</span>
+<span class="kw">class</span> <span class="cls">LoopRecorder</span> {
+  <span class="fn">constructor</span>(audioEngine) {
+    <span class="kw">this</span>.engine = audioEngine;
+    <span class="kw">this</span>.loops = [];       <span class="cm">// Multiple stacked loops</span>
+    <span class="kw">this</span>.recording = <span class="kw">null</span>; <span class="cm">// Active recording</span>
+    <span class="kw">this</span>.loopLength = <span class="num">4</span>;   <span class="cm">// bars</span>
+  }
+
+  <span class="fn">startRecording</span>() {
+    <span class="kw">this</span>.recording = { events: [], startTime: Tone.now() };
+    Tone.Transport.<span class="fn">start</span>();
+  }
+
+  <span class="fn">captureEvent</span>(musicalEvent) {
+    <span class="kw">if</span> (!<span class="kw">this</span>.recording) <span class="kw">return</span>;
+    <span class="kw">this</span>.recording.events.<span class="fn">push</span>({
+      ...musicalEvent,
+      time: Tone.now() - <span class="kw">this</span>.recording.startTime
+    });
+  }
+
+  <span class="fn">stopAndLoop</span>() {
+    <span class="kw">const</span> { events, startTime } = <span class="kw">this</span>.recording;
+    <span class="kw">this</span>.recording = <span class="kw">null</span>;
+    
+    <span class="kw">const</span> loopDuration = Tone.now() - startTime;
+    <span class="kw">const</span> part = <span class="kw">new</span> Tone.<span class="cls">Part</span>((time, event) => {
+      <span class="kw">this</span>.engine.<span class="fn">playNote</span>({ ...event, time });
+    }, events.<span class="fn">map</span>(e => [e.time, e]));
+    
+    part.loop = <span class="kw">true</span>;
+    part.loopEnd = loopDuration;
+    part.<span class="fn">start</span>();
+    <span class="kw">this</span>.loops.<span class="fn">push</span>(part);
+    <span class="kw">return</span> part;
+  }
+}</code></pre>
+        </section>
+
+        <!-- ============================
+       SECTION 6: INSTRUMENTS
+  ============================= -->
+        <section id="instruments">
+            <div class="section-header">
+                <span class="section-num">06</span>
+                <h2>Instrument Modules</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <h3>Guitar Module</h3>
+            <p>The guitar is the flagship instrument. The right hand (dominant) strums — the vertical velocity of the
+                wrist triggers a chord. The left hand forms chord shapes using finger configurations.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Left Hand Shape</th>
+                        <th>Gesture Description</th>
+                        <th>Chord Triggered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Open G</td>
+                        <td>Middle + Ring down, others up</td>
+                        <td>G Major</td>
+                    </tr>
+                    <tr>
+                        <td>Capo C</td>
+                        <td>Index bar across, others curl</td>
+                        <td>C Major</td>
+                    </tr>
+                    <tr>
+                        <td>Open D</td>
+                        <td>Index + Middle + Ring angled down</td>
+                        <td>D Major</td>
+                    </tr>
+                    <tr>
+                        <td>Power 5th</td>
+                        <td>Fist + Index extended</td>
+                        <td>E5 Power Chord</td>
+                    </tr>
+                    <tr>
+                        <td>Open E</td>
+                        <td>Fist fully closed</td>
+                        <td>E Minor (muted → release)</td>
+                    </tr>
+                    <tr>
+                        <td>Am shape</td>
+                        <td>Thumb up + 3 fingers curled</td>
+                        <td>A Minor</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><position: relative><code><span class="code-label">guitarModule.js</span>
+<span class="kw">const</span> CHORDS = {
+  <span class="str">'G'</span>: [<span class="str">'G2'</span>,<span class="str">'B2'</span>,<span class="str">'D3'</span>,<span class="str">'G3'</span>,<span class="str">'B3'</span>,<span class="str">'G4'</span>],
+  <span class="str">'C'</span>: [<span class="str">'C3'</span>,<span class="str">'E3'</span>,<span class="str">'G3'</span>,<span class="str">'C4'</span>,<span class="str">'E4'</span>],
+  <span class="str">'D'</span>: [<span class="str">'D3'</span>,<span class="str">'A3'</span>,<span class="str">'D4'</span>,<span class="str">'F#4'</span>],
+  <span class="str">'Em'</span>: [<span class="str">'E2'</span>,<span class="str">'B2'</span>,<span class="str">'E3'</span>,<span class="str">'G3'</span>,<span class="str">'B3'</span>,<span class="str">'E4'</span>],
+  <span class="str">'Am'</span>: [<span class="str">'A2'</span>,<span class="str">'E3'</span>,<span class="str">'A3'</span>,<span class="str">'C4'</span>,<span class="str">'E4'</span>],
+  <span class="str">'E5'</span>: [<span class="str">'E2'</span>,<span class="str">'B2'</span>], <span class="cm">// power chord</span>
+};
+
+<span class="kw">export class</span> <span class="cls">GuitarModule</span> {
+  <span class="fn">constructor</span>(audioEngine) {
+    <span class="kw">this</span>.audio = audioEngine;
+    <span class="kw">this</span>.currentChord = <span class="kw">null</span>;
+    <span class="kw">this</span>.velocityEstimator = <span class="kw">new</span> <span class="cls">VelocityEstimator</span>();
+    <span class="kw">this</span>.lastStrumDir = <span class="kw">null</span>;
+    <span class="kw">this</span>.strumThreshold = <span class="num">0.015</span>; <span class="cm">// normalized delta-Y</span>
+  }
+
+  <span class="fn">processFrame</span>({ leftHand, rightHand }) {
+    <span class="kw">if</span> (leftHand) {
+      <span class="kw">this</span>.currentChord = <span class="fn">detectChordShape</span>(leftHand.landmarks);
+    }
+
+    <span class="kw">if</span> (rightHand && <span class="kw">this</span>.currentChord) {
+      <span class="kw">const</span> wristY = rightHand.landmarks[<span class="num">0</span>].y;
+      <span class="kw">this</span>.velocityEstimator.<span class="fn">update</span>(wristY);
+
+      <span class="kw">const</span> strumEvent = <span class="fn">detectStrum</span>(rightHand.landmarks, <span class="kw">this</span>.lastStrumDir);
+      <span class="kw">if</span> (strumEvent) {
+        <span class="kw">this</span>.lastStrumDir = strumEvent.direction;
+        <span class="kw">const</span> velocity = <span class="kw">this</span>.velocityEstimator.<span class="fn">getVelocity</span>();
+        <span class="kw">const</span> notes = CHORDS[<span class="kw">this</span>.currentChord] || CHORDS[<span class="str">'G'</span>];
+
+        <span class="cm">// Arpeggiate the chord with slight delay between strings</span>
+        notes.<span class="fn">forEach</span>((note, i) => {
+          <span class="kw">const</span> delay = strumEvent.direction === <span class="str">'down'</span> ? i * <span class="num">0.015</span> : (notes.length - i) * <span class="num">0.015</span>;
+          <span class="kw">this</span>.audio.<span class="fn">playNote</span>({ 
+            instrument: <span class="str">'guitar'</span>, note, velocity, 
+            duration: <span class="str">'4n'</span>, 
+            time: Tone.now() + delay 
+          });
+        });
+      }
+    }
+  }
+}</code></pre>
+
+            <h3>Drums Module</h3>
+            <p>The drum module divides the camera frame into virtual "hit zones." When a hand enters a zone with
+                sufficient velocity, the corresponding drum sound fires. Right hand = right kit, Left hand = left kit.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Zone</th>
+                        <th>Position</th>
+                        <th>Sound</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Kick</td>
+                        <td>Bottom center</td>
+                        <td>Bass drum</td>
+                    </tr>
+                    <tr>
+                        <td>Snare</td>
+                        <td>Center left</td>
+                        <td>Snare drum</td>
+                    </tr>
+                    <tr>
+                        <td>Hi-Hat</td>
+                        <td>Top right</td>
+                        <td>Hi-hat (closed / open)</td>
+                    </tr>
+                    <tr>
+                        <td>Crash</td>
+                        <td>Top left</td>
+                        <td>Crash cymbal</td>
+                    </tr>
+                    <tr>
+                        <td>Tom 1</td>
+                        <td>Upper center-left</td>
+                        <td>High tom</td>
+                    </tr>
+                    <tr>
+                        <td>Tom 2</td>
+                        <td>Upper center-right</td>
+                        <td>Floor tom</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Piano Module</h3>
+            <p>An 2-octave virtual keyboard is rendered at the bottom of the screen. Finger tips are tracked and trigger
+                notes when they dip below a threshold Y coordinate (simulating pressing a key). Velocity comes from the
+                speed of the downward motion.</p>
+
+            <h3>Violin Module</h3>
+            <p>The most expressive instrument. Left hand position on a vertical virtual string fretboard determines
+                pitch (continuous, not discrete). Right hand bow motion (horizontal sweep) determines note onset. This
+                creates a continuous, gliding tone unique to violin.</p>
+        </section>
+
+        <!-- ============================
+       SECTION 7: AR OVERLAY
+  ============================= -->
+        <section id="ar-overlay">
+            <div class="section-header">
+                <span class="section-num">07</span>
+                <h2>AR Overlay</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <p>The AR overlay renders on a canvas element stacked on top of the video feed. It gives users real-time
+                visual confirmation of what the system is detecting, making it learnable.</p>
+
+            <pre><position: relative><code><span class="code-label">AROverlay.jsx</span>
+<span class="kw">const</span> <span class="fn">AROverlay</span> = ({ landmarks, activeInstrument, activeChord, noteParticles }) => {
+  <span class="kw">const</span> canvasRef = useRef();
+  
+  useEffect(() => {
+    <span class="kw">const</span> ctx = canvasRef.current.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
+    ctx.<span class="fn">clearRect</span>(<span class="num">0</span>, <span class="num">0</span>, ctx.canvas.width, ctx.canvas.height);
+
+    <span class="cm">// 1. Draw hand skeleton</span>
+    <span class="fn">drawHandSkeleton</span>(ctx, landmarks);
+
+    <span class="cm">// 2. Overlay instrument visual</span>
+    <span class="kw">if</span> (activeInstrument === <span class="str">'guitar'</span>) <span class="fn">drawGuitarFrets</span>(ctx, landmarks, activeChord);
+    <span class="kw">if</span> (activeInstrument === <span class="str">'drums'</span>)  <span class="fn">drawDrumZones</span>(ctx);
+    <span class="kw">if</span> (activeInstrument === <span class="str">'piano'</span>)  <span class="fn">drawPianoKeys</span>(ctx, landmarks);
+    <span class="kw">if</span> (activeInstrument === <span class="str">'violin'</span>) <span class="fn">drawViolinStrings</span>(ctx, landmarks);
+
+    <span class="cm">// 3. Draw note particles (flying notes when sound plays)</span>
+    noteParticles.<span class="fn">forEach</span>(p => <span class="fn">drawParticle</span>(ctx, p));
+    
+  }, [landmarks, activeInstrument, noteParticles]);
+
+  <span class="kw">return</span> &lt;<span class="cls">canvas</span> ref={canvasRef} style={{ position: <span class="str">'absolute'</span>, inset: <span class="num">0</span> }} /&gt;;
+};</code></pre>
+        </section>
+
+        <!-- ============================
+       SECTION 8: PROJECT STRUCTURE
+  ============================= -->
+        <section id="project-structure">
+            <div class="section-header">
+                <span class="section-num">08</span>
+                <h2>Project Structure</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <pre><position: relative><code><span class="code-label">Directory Tree</span>
+airstudio/
+├── public/
+│   └── samples/              <span class="cm"># Audio sample files (mp3)</span>
+│       ├── guitar/
+│       ├── drums/
+│       ├── piano/
+│       └── violin/
+│
+├── src/
+│   ├── cv/                   <span class="cm"># Computer Vision layer</span>
+│   │   ├── handTracking.js   <span class="cm"># MediaPipe init + frame loop</span>
+│   │   ├── landmarkUtils.js  <span class="cm"># Angle, distance helpers</span>
+│   │   └── velocityEstimator.js
+│   │
+│   ├── gestures/             <span class="cm"># Gesture recognition</span>
+│   │   ├── classifier.js     <span class="cm"># TF.js gesture model</span>
+│   │   ├── ruleEngine.js     <span class="cm"># Geometric rule checks</span>
+│   │   └── gestureDefs.js    <span class="cm"># Named gesture constants</span>
+│   │
+│   ├── instruments/          <span class="cm"># Per-instrument logic</span>
+│   │   ├── GuitarModule.js
+│   │   ├── DrumModule.js
+│   │   ├── PianoModule.js
+│   │   ├── ViolinModule.js
+│   │   └── instrumentManager.js  <span class="cm"># Switch + routing</span>
+│   │
+│   ├── audio/                <span class="cm"># Tone.js layer</span>
+│   │   ├── audioEngine.js
+│   │   ├── samplers.js       <span class="cm"># Instrument sampler loaders</span>
+│   │   ├── loopRecorder.js
+│   │   └── effects.js
+│   │
+│   ├── ar/                   <span class="cm"># AR Overlay</span>
+│   │   ├── AROverlay.jsx
+│   │   ├── drawGuitar.js
+│   │   ├── drawDrums.js
+│   │   ├── drawPiano.js
+│   │   ├── drawViolin.js
+│   │   └── particles.js
+│   │
+│   ├── components/           <span class="cm"># React UI</span>
+│   │   ├── Stage.jsx         <span class="cm"># Main camera + overlay view</span>
+│   │   ├── InstrumentHUD.jsx
+│   │   ├── LoopPanel.jsx
+│   │   └── OnboardingTour.jsx
+│   │
+│   ├── hooks/
+│   │   ├── useHandTracking.js
+│   │   ├── useAudioEngine.js
+│   │   └── useGestureEngine.js
+│   │
+│   └── App.jsx
+│
+├── model/                    <span class="cm"># TF.js gesture model training</span>
+│   ├── collect_data.py
+│   ├── train.py
+│   └── model/                <span class="cm"># Saved TF.js model</span>
+│
+└── package.json</code></pre>
+        </section>
+
+        <!-- ============================
+       SECTION 9: IMPLEMENTATION PLAN
+  ============================= -->
+        <section id="implementation-plan">
+            <div class="section-header">
+                <span class="section-num">09</span>
+                <h2>Implementation Plan</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-1">1</div>
+                    <div class="timeline-content">
+                        <div class="timeline-meta">WEEKS 1–3 · PHASE 1</div>
+                        <h3>Foundation — Camera + Sound + Guitar</h3>
+                        <p>Get the core loop working end-to-end: camera input → hand tracking → guitar chord detection →
+                            audio playback. This is the minimum viable demo.</p>
+                        <ul>
+                            <li>Vite + React project setup, MediaPipe Hands integration</li>
+                            <li>Basic 21-landmark visualization on canvas</li>
+                            <li>Rule-based finger extension detection</li>
+                            <li>Tone.js guitar sampler, strum detection</li>
+                            <li>6 basic chord shapes (G, C, D, Em, Am, E5)</li>
+                            <li>AR fret overlay on left hand</li>
+                        </ul>
+                        <div style="margin-top:12px">
+                            <span class="badge badge-blue">MediaPipe</span>
+                            <span class="badge badge-blue">Tone.js</span>
+                            <span class="badge badge-green">Guitar MVP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-2">2</div>
+                    <div class="timeline-content">
+                        <div class="timeline-meta">WEEKS 4–7 · PHASE 2</div>
+                        <h3>Multi-Instrument + ML Classifier</h3>
+                        <p>Add drums, piano, violin. Build the TF.js gesture classifier for reliable chord shape
+                            detection. Add instrument switching via the rock-sign gesture.</p>
+                        <ul>
+                            <li>DrumModule with hit-zone detection</li>
+                            <li>PianoModule with virtual keyboard overlay</li>
+                            <li>ViolinModule with bow tracking</li>
+                            <li>Collect training data + train TF.js gesture model</li>
+                            <li>Instrument switch detector (rock-sign hold → switch wheel)</li>
+                            <li>Loop recorder — record + stack layers</li>
+                        </ul>
+                        <div style="margin-top:12px">
+                            <span class="badge badge-purple">TF.js Model</span>
+                            <span class="badge badge-purple">4 Instruments</span>
+                            <span class="badge badge-purple">Loop System</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-3">3</div>
+                    <div class="timeline-content">
+                        <div class="timeline-meta">WEEKS 8–12 · PHASE 3</div>
+                        <h3>Polish, Multiplayer + Launch</h3>
+                        <p>UX polish, onboarding, multiplayer jam via WebRTC, mobile support, performance optimizations,
+                            and public release.</p>
+                        <ul>
+                            <li>Onboarding tutorial (gesture guide animations)</li>
+                            <li>Multiplayer via WebRTC peer connections</li>
+                            <li>Mobile (PWA) camera support</li>
+                            <li>Performance: target 30fps on mid-range hardware</li>
+                            <li>Share performance recording (MediaRecorder API)</li>
+                            <li>Custom scale/key selector for all instruments</li>
+                        </ul>
+                        <div style="margin-top:12px">
+                            <span class="badge badge-orange">WebRTC</span>
+                            <span class="badge badge-orange">PWA</span>
+                            <span class="badge badge-orange">Ship 🚀</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================
+       SECTION 10: SPRINT PLAN
+  ============================= -->
+        <section id="sprint-plan">
+            <div class="section-header">
+                <span class="section-num">10</span>
+                <h2>Sprint Breakdown</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <table class="sprint-row">
+                <thead>
+                    <tr>
+                        <th>Sprint</th>
+                        <th>Week</th>
+                        <th>Deliverables</th>
+                        <th>Done When...</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>S1</td>
+                        <td>1</td>
+                        <td>Project setup, webcam feed, MediaPipe landmarks rendered</td>
+                        <td>Can see hand skeleton on screen</td>
+                    </tr>
+                    <tr>
+                        <td>S2</td>
+                        <td>2</td>
+                        <td>Finger extension rules, basic chord detection (3 chords)</td>
+                        <td>Console logs "G_MAJOR" when hand forms G shape</td>
+                    </tr>
+                    <tr>
+                        <td>S3</td>
+                        <td>3</td>
+                        <td>Tone.js guitar sampler, strum detection, sound plays</td>
+                        <td>Air strumming plays chord sounds</td>
+                    </tr>
+                    <tr>
+                        <td>S4</td>
+                        <td>4</td>
+                        <td>All 6 guitar chords, AR fret overlay, velocity dynamics</td>
+                        <td>Full guitar demo possible</td>
+                    </tr>
+                    <tr>
+                        <td>S5</td>
+                        <td>5</td>
+                        <td>DrumModule hit zones, drum sampler, drum overlay</td>
+                        <td>Air drumming plays all kit pieces</td>
+                    </tr>
+                    <tr>
+                        <td>S6</td>
+                        <td>6</td>
+                        <td>PianoModule, virtual keyboard rendered, finger-key map</td>
+                        <td>All 24 piano keys playable</td>
+                    </tr>
+                    <tr>
+                        <td>S7</td>
+                        <td>7</td>
+                        <td>ViolinModule, TF.js classifier training + integration</td>
+                        <td>All 4 instruments playable, classifier >90% accuracy</td>
+                    </tr>
+                    <tr>
+                        <td>S8</td>
+                        <td>8</td>
+                        <td>Instrument switcher gesture, loop recorder</td>
+                        <td>Can switch instruments mid-play and layer loops</td>
+                    </tr>
+                    <tr>
+                        <td>S9</td>
+                        <td>9</td>
+                        <td>Onboarding tour, HUD polish, note particles</td>
+                        <td>New user can learn all gestures in 5 min</td>
+                    </tr>
+                    <tr>
+                        <td>S10</td>
+                        <td>10</td>
+                        <td>WebRTC multiplayer (2 users)</td>
+                        <td>Two people can jam together</td>
+                    </tr>
+                    <tr>
+                        <td>S11</td>
+                        <td>11</td>
+                        <td>Mobile PWA, performance optimization</td>
+                        <td>Runs at 30fps on iPhone 13+</td>
+                    </tr>
+                    <tr>
+                        <td>S12</td>
+                        <td>12</td>
+                        <td>Recording share, bug fixes, public launch</td>
+                        <td>Live URL, shareable demo video</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ============================
+       SECTION 11: CLAUDE PROMPTS — SETUP
+  ============================= -->
+        <section id="prompts-setup">
+            <div class="section-header">
+                <span class="section-num">11</span>
+                <h2>Claude Prompts — Setup</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <p>Use these prompts directly with Claude to build each part of AirStudio. Each prompt is self-contained and
+                gives Claude all the context it needs.</p>
+
+            <h3>Prompt 1: Project Scaffolding</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Create a new React + Vite project called "airstudio" with the following setup:
+
+                    1. Install dependencies: react, react-dom, @mediapipe/hands, @mediapipe/camera_utils, tone,
+                    @tensorflow/tfjs, @tensorflow-models/hand-pose-detection, tailwindcss
+
+                    2. Create this folder structure:
+                    src/cv/, src/gestures/, src/instruments/, src/audio/, src/ar/, src/components/, src/hooks/
+
+                    3. Create a basic App.jsx that:
+                    - Shows a fullscreen video element (webcam feed, mirrored)
+                    - Overlays a canvas element on top (same dimensions)
+                    - Has a bottom HUD bar showing "Active Instrument: Guitar"
+                    - Has a dark background (#0A0C10)
+
+                    4. Create src/hooks/useWebcam.js that:
+                    - Requests webcam access via getUserMedia
+                    - Returns a ref to attach to a video element
+                    - Returns isReady boolean and any error
+
+                    Show me all the files with complete code. Use TypeScript.</p>
+            </div>
+
+            <h3>Prompt 2: MediaPipe Integration</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the computer vision layer for AirStudio, a browser-based air guitar app.
+
+                    Create src/cv/handTracking.js that:
+                    - Initializes MediaPipe Hands with: maxNumHands=2, modelComplexity=1, minDetectionConfidence=0.7,
+                    selfieMode=true
+                    - Runs on every video frame using a Camera utility loop
+                    - Emits a results object: { multiHandLandmarks, multiHandedness }
+                    - Exports initHandTracking(videoElement, onResultsCallback) function
+
+                    Create src/cv/landmarkUtils.js with these utility functions:
+                    - getFingerExtension(landmarks, fingerIndex) → 0-1 float (0=curled, 1=extended)
+                    - fingerIndex: 0=thumb, 1=index, 2=middle, 3=ring, 4=pinky
+                    - Use the angle at the PIP joint (joints 2,3,4 for index = landmarks 6,7,8)
+                    - getWristVelocity(currentLandmarks, prevLandmarks) → {x, y, speed}
+                    - getPalmCenter(landmarks) → {x, y}
+                    - getHandTilt(landmarks) → angle in degrees
+                    - getPinchDistance(landmarks) → normalized 0-1 (0=touching, 1=fully open)
+
+                    Create src/hooks/useHandTracking.js that:
+                    - Wires up the video ref, MediaPipe init, and result callbacks
+                    - Returns: { leftHand, rightHand, isTracking }
+                    - leftHand/rightHand: { landmarks, handedness, fingerExtensions[] }
+
+                    Include console.log output to confirm 21 landmarks are being detected per frame.</p>
+            </div>
+        </section>
+
+        <!-- ============================
+       SECTION 12: CLAUDE PROMPTS — CV
+  ============================= -->
+        <section id="prompts-cv">
+            <div class="section-header">
+                <span class="section-num">12</span>
+                <h2>Claude Prompts — Gesture Engine</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <h3>Prompt 3: Gesture Classifier</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the gesture recognition system for AirStudio.
+
+                    Context: We have MediaPipe Hands giving us 21 3D landmarks per hand. Each landmark has {x, y, z}
+                    normalized 0-1 coordinates.
+
+                    Create src/gestures/ruleEngine.js with rule-based gesture detection:
+
+                    Implement these gesture recognizers (each returns true/false):
+                    - isFistClosed(landmarks): all 5 fingertips within 0.08 distance of palm center
+                    - isOpenPalm(landmarks): all 5 finger extensions > 0.7
+                    - isRockSign(landmarks): index + pinky extended > 0.7, middle + ring < 0.3 - isHangLoose(landmarks):
+                        thumb + pinky extended> 0.6, others < 0.3 - isPointingUp(landmarks): only index extended> 0.7
+                            - isPinching(landmarks): getPinchDistance < 0.05 Create src/gestures/strumDetector.js: -
+                                Tracks wrist Y position over last 8 frames - Detects a strum DOWN when wrist moves down>
+                                0.04 normalized units in < 5 frames - Detects a strum UP when wrist moves up> 0.04
+                                    normalized units in < 5 frames - Returns { detected: bool, direction: 'up' |'down',
+                                        velocity: 0-1 } - Includes debounce: minimum 100ms between strums Create
+                                        src/gestures/chordDetector.js: - Takes left hand landmarks - Uses finger
+                                        extension values + relative positions to classify these guitar chords: G_MAJOR,
+                                        C_MAJOR, D_MAJOR, E_MINOR, A_MINOR, E5_POWER - Returns chord name string or null
+                                        - Include a confidence threshold (only return chord if confidence> 0.65)
+
+                                        Show full working JavaScript code for all three files.</p>
+            </div>
+
+            <h3>Prompt 4: Velocity Estimator</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Create src/cv/velocityEstimator.js for AirStudio:
+
+                    Build a VelocityEstimator class that:
+                    - Constructor takes windowSize (default 6 frames)
+                    - update(landmark) method: takes a landmark {x, y} and timestamps it internally
+                    - getVelocity() → returns {vx, vy, speed} where speed is normalized 0-1
+                    - speed = 0 means stationary, speed = 1 means very fast movement
+                    - Normalize so typical strum speed maps to ~0.7
+                    - getMidiVelocity() → maps speed to MIDI velocity 20-127 (minimum 20 so notes aren't inaudible)
+                    - getDirection() → returns angle in degrees (0=right, 90=up, 180=left, 270=down)
+                    - reset() → clears history
+
+                    Also build a HitDetector class for drums that:
+                    - Tracks a fingertip or wrist landmark
+                    - detectHit() → returns { hit: bool, force: 0-1 }
+                    - A "hit" is when movement direction flips from downward to upward with speed > 0.3
+                    - Debounce: minimum 80ms between hits
+                    - force maps to MIDI velocity
+
+                    Use performance.now() for timestamps, not Date.now().</p>
+            </div>
+        </section>
+
+        <!-- ============================
+       SECTION 13: CLAUDE PROMPTS — AUDIO
+  ============================= -->
+        <section id="prompts-audio">
+            <div class="section-header">
+                <span class="section-num">13</span>
+                <h2>Claude Prompts — Audio Engine</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <h3>Prompt 5: Core Audio Engine</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the audio engine for AirStudio, a gesture-based music app using Tone.js.
+
+                    Create src/audio/audioEngine.js:
+
+                    Build an AudioEngine class with:
+                    - async init() method: starts Tone.js context, creates effects chain:
+                    Compressor(-20dB, ratio 4) → Reverb(decay:1.2, wet:0.15) → Limiter(-3dB) → Destination
+                    - async loadInstruments() method: loads Tone.Sampler for guitar, drums, piano, violin
+                    Use these free sample URLs from Tonejs/Tone.js GitHub examples:
+                    Guitar: https://tonejs.github.io/audio/salamander/ (use piano samples as placeholder)
+                    Drums: create with Tone.MembraneSynth and Tone.MetalSynth as fallbacks
+                    - playNote(instrument, note, velocity, duration) method
+                    - startNote(instrument, note, velocity) — for held notes (violin, piano)
+                    - stopNote(instrument, note) — release held note
+                    - isLoaded boolean getter
+
+                    Create src/audio/samplers.js:
+                    - loadGuitarSampler(): uses Tone.Sampler with Salamander piano as placeholder,
+                    maps notes E2-E5
+                    - loadDrumSampler(): uses Tone.Players with:
+                    kick: Tone.MembraneSynth, snare: Tone.NoiseSynth, hihat: Tone.MetalSynth
+                    Returns an object with triggerDrum(type, velocity) method
+                    - loadPianoSampler(): Tone.Sampler with Salamander piano samples
+                    - loadViolinSampler(): Tone.Synth with sawtooth oscillator + heavy reverb as placeholder
+
+                    Create src/hooks/useAudioEngine.js:
+                    - Manages init lifecycle (must be triggered by user click due to browser autoplay policy)
+                    - Returns { audioEngine, isReady, initAudio }
+                    - initAudio() must be called on first user interaction</p>
+            </div>
+
+            <h3>Prompt 6: Loop Recorder</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the loop recording system for AirStudio.
+
+                    Create src/audio/loopRecorder.js:
+
+                    Build a LoopRecorder class:
+                    - Constructor takes an audioEngine instance and BPM (default 120)
+                    - startRecording(bars = 4): begins capturing musical events, starts Tone.Transport
+                    - captureEvent(musicalEvent): records event with its transport time offset
+                    musicalEvent = { instrument, note, velocity, duration }
+                    - stopAndLoop(): stops recording, creates a Tone.Part that loops the captured events
+                    Returns a loopId string
+                    - stopLoop(loopId): stops and destroys that loop
+                    - stopAllLoops(): clears everything
+                    - getActiveLoops(): returns array of { id, instrument, eventCount, isPlaying }
+                    - setLoopVolume(loopId, volume): 0-1
+
+                    The loop playback should:
+                    - Quantize note start times to nearest 16th note for cleaner loops
+                    - Preserve original velocity and duration
+                    - Handle the case where no notes were recorded (don't create empty loop)
+
+                    Also create a simple visual representation:
+                    - getLoopWaveform(loopId): returns array of 32 values (0-1) representing activity over time
+                    Used for drawing a simple waveform bar in the UI</p>
+            </div>
+        </section>
+
+        <!-- ============================
+       SECTION 14: CLAUDE PROMPTS — INSTRUMENTS
+  ============================= -->
+        <section id="prompts-instruments">
+            <div class="section-header">
+                <span class="section-num">14</span>
+                <h2>Claude Prompts — Instrument Modules</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <h3>Prompt 7: Guitar Module</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the complete Guitar module for AirStudio.
+
+                    Context:
+                    - Left hand forms chord shapes (we have finger extension values 0-1 for each finger)
+                    - Right hand strums (we detect strum direction + velocity from wrist movement)
+                    - AudioEngine.playNote(instrument, note, velocity, duration) is available
+
+                    Create src/instruments/GuitarModule.js:
+
+                    The GuitarModule class should:
+                    - Constructor takes audioEngine instance
+                    - processFrame({ leftHand, rightHand }) called every frame
+                    leftHand/rightHand = { landmarks, fingerExtensions: [thumb,index,middle,ring,pinky] } | null
+
+                    Implement chord detection (detectChord(fingerExtensions)):
+                    Return one of: 'G', 'C', 'D', 'Em', 'Am', 'E5', or null
+                    Rules:
+                    - G: middle+ring curled (<0.3), others extended - C: index+middle angled (0.3-0.6), ring+pinky
+                        curled - D: index+middle+ring extended, pinky curled, thumb tucked - Em: index+middle extended,
+                        ring+pinky curled - Am: index+middle+ring curled (0.2-0.5), pinky+thumb relaxed - E5: only index
+                        extended>0.7, rest closed
+
+                        Chord voicings (MIDI note arrays):
+                        - G: ['G2','B2','D3','G3','B3','G4']
+                        - C: ['C3','E3','G3','C4','E4']
+                        - D: ['D3','F#3','A3','D4']
+                        - Em: ['E2','B2','E3','G3','B3','E4']
+                        - Am: ['A2','E3','A3','C4','E4']
+                        - E5: ['E2','B2','E3']
+
+                        Strum behavior:
+                        - Arpeggiate notes with 12ms delay between strings
+                        - DOWN strum: low to high string order
+                        - UP strum: high to low string order
+                        - Minimum 120ms between strums (debounce)
+                        - Mute all notes if fist closed
+
+                        Include pitch bend: if hand tilt > 15 degrees, apply ±0.5 semitone bend
+                        Include vibrato: if rapid small vertical oscillation detected, apply 0.3Hz vibrato</p>
+            </div>
+
+            <h3>Prompt 8: Drum Module</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the Drum module for AirStudio.
+
+                    Create src/instruments/DrumModule.js:
+
+                    The virtual drum kit uses hit zones defined as regions of the normalized camera frame (0-1
+                    coordinates):
+
+                    Hit zones:
+                    - KICK: y > 0.75, x: 0.35-0.65 (center bottom)
+                    - SNARE: y: 0.45-0.70, x: 0.25-0.50 (left center)
+                    - HIHAT: y: 0.15-0.40, x: 0.55-0.80 (right upper)
+                    - CRASH: y: 0.10-0.35, x: 0.15-0.40 (left upper)
+                    - TOM1: y: 0.25-0.50, x: 0.40-0.60 (center upper)
+                    - TOM2: y: 0.35-0.60, x: 0.60-0.80 (right center)
+                    - RIDE: y: 0.15-0.40, x: 0.80-1.00 (far right)
+
+                    The DrumModule class:
+                    - processFrame({ leftHand, rightHand }) — check both hands
+                    - For each hand, track the wrist (landmark 0) and middle fingertip (landmark 12)
+                    - Detect a "hit" when: fingertip enters a zone AND downward velocity > 0.4
+                    - After a hit, the zone is "cooling down" for 150ms (prevents double-trigger)
+                    - Map hit force (velocity 0-1) to MIDI velocity 30-127
+
+                    Sound mapping:
+                    - KICK: bass-heavy thud (Tone.MembraneSynth: pitchDecay:0.05, octaves:6)
+                    - SNARE: Tone.NoiseSynth with short decay
+                    - HIHAT closed: Tone.MetalSynth high freq short
+                    - HIHAT open: if hand is still in hihat zone after hit, extend decay
+                    - CRASH/RIDE: Tone.MetalSynth longer decay
+                    - TOM1/TOM2: Tone.MembraneSynth mid pitch
+
+                    Include getActiveZones(): returns array of zone names currently being hit (for visual highlight in
+                    AR overlay)</p>
+            </div>
+
+            <h3>Prompt 9: Piano + Violin</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the Piano and Violin instrument modules for AirStudio.
+
+                    Create src/instruments/PianoModule.js:
+
+                    A 2-octave virtual keyboard (C3 to B4, 24 keys) is rendered at the bottom of the screen.
+                    Key positions are at y > 0.80 in normalized coordinates.
+                    White keys span the full x-axis, black keys are offset.
+
+                    PianoModule class:
+                    - processFrame({ leftHand, rightHand })
+                    - Track all 10 fingertips (5 per hand, landmarks 4,8,12,16,20)
+                    - A key is "pressed" when: fingertip is within the key's x-range AND y > 0.82
+                    - Velocity = downward speed of the fingertip at moment of crossing y=0.82 threshold
+                    - Hold: note sustains while fingertip remains in key zone
+                    - Release: triggerRelease when fingertip leaves zone
+                    - Prevent same finger from triggering same key twice until it leaves and re-enters
+                    - Return activeKeys: Set of currently pressed note strings
+
+                    Key layout helper:
+                    - buildKeyLayout(startOctave=3, octaves=2): returns array of {note, x, width, isBlack}
+                    White keys: C D E F G A B (7 per octave)
+                    Black keys: C# D# F# G# A# positioned between white keys
+
+                    Create src/instruments/ViolinModule.js:
+
+                    Virtual violin has 4 vertical strings on the left half of screen.
+                    The strings are at x positions: 0.25, 0.33, 0.42, 0.50
+                    String tunings: G3, D4, A4, E5
+
+                    ViolinModule class:
+                    - Left hand: finger position on string determines pitch
+                    - y position on string maps to pitch (top=high note, bottom=open string)
+                    - Map y 0.1-0.8 to +12 semitones offset from open string tuning
+                    - Right hand: horizontal bow motion (left-right sweep) triggers note onset
+                    - Continuous horizontal movement with speed > 0.15 sustains the note
+                    - Movement stop = note off
+                    - Bow pressure (speed) = volume/tone brightness
+                    - Use Tone.Synth with oscillator type 'sawtooth', heavy filter + reverb for realistic tone
+                    - Implement pitch smoothing: interpolate between finger positions over 50ms to avoid glitching</p>
+            </div>
+        </section>
+
+        <!-- ============================
+       SECTION 15: CLAUDE PROMPTS — ADVANCED
+  ============================= -->
+        <section id="prompts-advanced">
+            <div class="section-header">
+                <span class="section-num">15</span>
+                <h2>Claude Prompts — Advanced Features</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <h3>Prompt 10: AR Overlay Rendering</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the AR overlay system for AirStudio.
+
+                    Create src/ar/AROverlay.jsx — a React component that:
+                    - Renders a <canvas> absolutely positioned over the video feed
+                        - Takes props: { landmarks, activeInstrument, guitarState, drumState, pianoState }
+                        - Calls the appropriate draw function based on activeInstrument each frame
+
+                        Create src/ar/drawHand.js:
+                        - drawHandSkeleton(ctx, landmarks, color='#00E5FF'):
+                        Draw lines connecting landmarks using HAND_CONNECTIONS from MediaPipe
+                        Draw small circles at each landmark
+                        Style: semi-transparent, glowing effect using ctx.shadowBlur
+
+                        Create src/ar/drawGuitar.js:
+                        - drawGuitarFrets(ctx, leftHandLandmarks, activeChord):
+                        Render 6 virtual fret strings emanating from left hand landmarks
+                        Highlight the finger positions for the current chord shape
+                        Show chord name text above the hand
+                        Color: teal (#00E5FF) for frets, gold (#FACC15) for active chord positions
+
+                        Create src/ar/drawDrums.js:
+                        - drawDrumZones(ctx, activeZones):
+                        Render 7 drum zone rectangles with labels (KICK, SNARE, etc.)
+                        Inactive zones: semi-transparent dark fill, dim border
+                        Active zones (being hit): bright fill with glow effect, show force meter
+
+                        Create src/ar/drawPiano.js:
+                        - drawPianoKeys(ctx, keyLayout, activeKeys):
+                        Render 24 keys at bottom of screen
+                        White keys: white fill, dark border
+                        Black keys: dark fill, no border
+                        Pressed keys: accent color fill + glow
+
+                        Create src/ar/particles.js:
+                        - NoteParticle class: x, y, note, color, lifetime, velocity
+                        - spawnParticle(x, y, note): creates particle at hand position
+                        - updateAndDraw(ctx, particles, deltaTime): moves particles up, fades out
+                        Render as musical note symbols (♩ ♪ ♫) that float upward and fade</p>
+            </div>
+
+            <h3>Prompt 11: Instrument Switcher</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the instrument switching system for AirStudio.
+
+                    Create src/instruments/instrumentManager.js:
+
+                    InstrumentManager class:
+                    - Constructor takes audioEngine
+                    - Holds instances of GuitarModule, DrumModule, PianoModule, ViolinModule
+                    - activeInstrument: 'guitar' | 'drums' | 'piano' | 'violin'
+                    - processFrame(hands): routes to active instrument's processFrame
+                    - switchTo(instrumentName): switches active instrument, stops any held notes
+                    - Emits 'switch' event that UI can listen to
+
+                    Create src/gestures/switchDetector.js:
+                    - Detects the "rock sign held for 1.5 seconds" gesture to open instrument wheel
+                    - While held, tracks the hand X position to select an instrument:
+                    - Far left: guitar
+                    - Center-left: drums
+                    - Center-right: piano
+                    - Far right: violin
+                    - Returns: { wheelOpen: bool, selectedInstrument: string | null }
+
+                    Create src/components/InstrumentWheel.jsx:
+                    - Rendered when wheel is open
+                    - Shows 4 instrument icons in a horizontal row
+                    - Highlights the currently selected one based on hand X position
+                    - Has a smooth slide-in animation (CSS transition)
+                    - Shows instrument name below icon
+                    - Disappears after selection with a brief flash animation
+                    - Style: dark glassmorphism panel, instrument icons as large emoji with labels</p>
+            </div>
+
+            <h3>Prompt 12: Multiplayer Jam</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Build the multiplayer jam feature for AirStudio using WebRTC.
+
+                    Create src/multiplayer/jamSession.js:
+
+                    Use simple-peer (npm package) for WebRTC peer connections.
+                    Use a simple signaling server (can be a Cloudflare Worker or Express + WebSocket).
+
+                    JamSession class:
+                    - createRoom(): generates a 6-char room code, returns it
+                    - joinRoom(code): connects to an existing room
+                    - onRemoteEvent(callback): fires when remote player plays a note
+                    callback receives: { instrument, note, velocity, duration, timestamp }
+                    - sendEvent(musicalEvent): sends a musical event to all peers in the room
+                    - disconnect(): clean up
+                    - getConnectedPeers(): returns count
+
+                    MusicalEvent sync:
+                    - When a remote event is received, play it through the LOCAL audio engine
+                    (not re-broadcast it — prevents echo loops)
+                    - Add 50ms compensation buffer for network jitter
+                    - If latency > 200ms, show a warning in UI
+
+                    Create src/components/JamHUD.jsx:
+                    - Small overlay showing: room code, number of connected players (dots)
+                    - Share button that copies the room link to clipboard
+                    - Leave button
+                    - Latency indicator (green < 80ms, yellow 80-150ms, red> 150ms)
+                        - Each connected player shows their active instrument as a small icon
+
+                        Create a simple signaling server in server/signaling.js using Express + ws (WebSocket).
+                        The server only handles: create-room, join-room, relay-offer, relay-answer, relay-ice.
+                        It stores no audio data — only WebRTC handshake messages.</p>
+            </div>
+
+            <h3>Prompt 13: Performance Optimization</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Optimize AirStudio for performance to hit 30fps on mid-range hardware.
+
+                    Current performance issues to fix:
+                    1. MediaPipe + React re-renders running on same thread causing janky frames
+                    2. Canvas AR overlay redraws every frame even when hands haven't moved
+                    3. Tone.js sampler loads all instruments upfront blocking UI
+
+                    Please:
+
+                    1. Move MediaPipe to a Web Worker:
+                    Create src/cv/handTrackingWorker.js
+                    - Post webcam frames to worker using OffscreenCanvas
+                    - Worker posts back landmark results
+                    - Main thread only handles results, not CV processing
+                    - Note: MediaPipe Hands WASM works in Web Workers
+
+                    2. Optimize canvas rendering:
+                    - Only redraw AR overlay when landmarks have changed by more than 0.005 units
+                    - Cache the drum zone background to an offscreen canvas
+                    - Use requestAnimationFrame properly — don't call draw twice per frame
+                    - Use ctx.save()/restore() correctly to avoid state leaks
+
+                    3. Lazy-load instrument samplers:
+                    - Load guitar sampler immediately on app start
+                    - Load other instruments only when first switched to
+                    - Show a loading spinner on the instrument icon if not yet loaded
+                    - Pre-load next instrument when user holds the rock-sign gesture
+
+                    4. Frame rate management:
+                    - Create a PerformanceMonitor class that tracks fps over 60 frames
+                    - If fps drops below 25 for 3 seconds, auto-switch MediaPipe to modelComplexity=0
+                    - Show a subtle performance indicator in debug mode
+                    - Export usePerformanceMonitor() hook
+
+                    Show complete implementation for all 4 optimizations.</p>
+            </div>
+
+            <h3>Prompt 14: Full Integration Test</h3>
+            <div class="prompt-block">
+                <div class="prompt-tag">Claude Prompt — Copy & Use</div>
+                <button class="copy-btn"
+                    onclick="navigator.clipboard.writeText(this.parentElement.querySelector('p').innerText)">Copy</button>
+                <p>Write integration tests for the core AirStudio pipeline using Vitest and @testing-library/react.
+
+                    Test these scenarios:
+
+                    1. CV Pipeline test (src/cv/landmarkUtils.test.js):
+                    - getFingerExtension() returns 0 for a flat (extended) finger angle
+                    - getFingerExtension() returns 1 for a fully curled finger
+                    - getWristVelocity() returns 0 when landmarks haven't changed
+                    - getPinchDistance() returns near-0 when thumb tip and index tip overlap
+
+                    2. Gesture Detection test (src/gestures/ruleEngine.test.js):
+                    - isFistClosed() returns true for a sample fist landmark set
+                    - isOpenPalm() returns true for a sample open hand landmark set
+                    - isRockSign() detects index + pinky up correctly
+                    Create mock landmark data as constants in a test-fixtures.js file
+
+                    3. Guitar Module test (src/instruments/GuitarModule.test.js):
+                    - detectChord() returns 'G' for G-major finger positions
+                    - detectChord() returns null when confidence is below threshold
+                    - Strum detection fires playNote() with correct chord notes
+                    - No notes fire when fist is closed (mute)
+                    Mock audioEngine.playNote and verify it gets called with correct args
+
+                    4. Audio Engine test (src/audio/audioEngine.test.js):
+                    - Mock Tone.js completely (jest.mock('tone'))
+                    - Test that playNote() calls the right sampler method
+                    - Test that init() sets up the effects chain
+
+                    Run with: npx vitest --coverage
+                    Target: >80% coverage on src/instruments/ and src/gestures/</p>
+            </div>
+
+            <div class="callout callout-warn">
+                <div class="callout-icon">💡</div>
+                <p><strong>Pro tip:</strong> Feed these prompts to Claude sequentially. After each prompt, share the
+                    generated code back and say "Here's what was built. Now move to Prompt [N+1]." Claude will maintain
+                    context and avoid conflicts between modules.</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="card">
+                <h3 style="margin-top:0">Quick Reference — Key Libraries</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Library</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                            <th>Docs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@mediapipe/hands</td>
+                            <td>0.4.x</td>
+                            <td>Hand landmark detection</td>
+                            <td>mediapipe.dev</td>
+                        </tr>
+                        <tr>
+                            <td>tone</td>
+                            <td>14.x</td>
+                            <td>Music synthesis + scheduling</td>
+                            <td>tonejs.github.io</td>
+                        </tr>
+                        <tr>
+                            <td>@tensorflow/tfjs</td>
+                            <td>4.x</td>
+                            <td>Gesture classifier</td>
+                            <td>js.tensorflow.org</td>
+                        </tr>
+                        <tr>
+                            <td>simple-peer</td>
+                            <td>9.x</td>
+                            <td>WebRTC peer connections</td>
+                            <td>github/feross/simple-peer</td>
+                        </tr>
+                        <tr>
+                            <td>react</td>
+                            <td>18.x</td>
+                            <td>UI + state management</td>
+                            <td>react.dev</td>
+                        </tr>
+                        <tr>
+                            <td>vite</td>
+                            <td>5.x</td>
+                            <td>Build tool + dev server</td>
+                            <td>vitejs.dev</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        // Active nav highlighting on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+                    if (active) active.classList.add('active');
+                }
+            });
+        }, { rootMargin: '-30% 0px -60% 0px' });
+
+        sections.forEach(s => observer.observe(s));
+    </script>
+</body>
+
+</html>
