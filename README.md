@@ -1,50 +1,65 @@
-# React + TypeScript + Vite
+# AirStudio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AirStudio is a web-based, AI-powered musical performance application that allows users to play virtual instruments in thin air. By leveraging advanced hand tracking through your webcam, it translates your gestures into expressive musical notes and overlays augmented reality (AR) graphics to provide rich visual feedback.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Real-Time Hand Tracking:** Integrates MediaPipe and TensorFlow.js to accurately capture hand movements and gestures directly from your browser.
+- **Interactive Virtual Instruments:** Includes modular instrument engines for:
+  - 🥁 **Drums**
+  - 🎸 **Guitar**
+  - 🎹 **Piano**
+  - 🎻 **Violin**
+- **Dynamic Audio Generation:** Built on Tone.js to synthesize and playback high-quality audio reactively.
+- **AR Visual Overlays:** Renders virtual instruments over your webcam feed, providing an immersive, augmented reality playing experience.
+- **Gesture Classification System:** Custom rules and machine learning modules to detect strums, chord shapes, striking velocities, and other musical interactions.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS
+- **Machine Learning / Computer Vision:** MediaPipe Hands, TensorFlow.js Models
+- **Audio Engine:** Tone.js
 
-- Configure the top-level `parserOptions` property like this:
+## Project Structure
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- `src/audio/`: Tone.js audio engine, samplers, and playback utilities.
+- `src/cv/`: Computer vision logic, hand tracking integration, velocity estimation, and landmark processing.
+- `src/gestures/`: Gesture classification, chord detection, and strumming rules.
+- `src/instruments/`: Core musical instrument modules mapping gestures to sound.
+- `src/ar/`: Augmented reality rendering components for visual feedback of the instruments.
+- `src/hooks/`: Custom React hooks for managing state and lifecycles (audio, webcam, tracking).
+
+## Getting Started
+
+### Prerequisites
+
+Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
+
+### Installation
+
+1. Clone the repository and navigate to the project directory:
+   ```bash
+   git clone https://github.com/Vedant-Baldwa/AirStudio.git
+   cd AirStudio
+   ```
+
+2. Install the dependencies:
+   ```bash
+   npm install
+   ```
+
+### Running Locally
+
+Start the Vite development server:
+```bash
+npm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Navigate to `http://localhost:5173/` in your browser. Ensure you grant webcam permissions when prompted!
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+### Building for Production
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+To create an optimized production build:
+```bash
+npm run build
 ```
